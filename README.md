@@ -1,1 +1,1 @@
-# verkundenbot-controller
+# verkundenbot-device
