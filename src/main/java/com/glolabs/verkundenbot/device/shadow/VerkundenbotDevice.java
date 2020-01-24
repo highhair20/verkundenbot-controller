@@ -23,6 +23,7 @@ import com.amazonaws.services.iot.client.AWSIotDeviceProperty;
 
 import com.amazonaws.services.iot.client.shadow.AwsIotJsonDeserializer;
 
+import com.glolabs.verkundenbot.device.gpio.DeviceGpioController;
 import com.pi4j.io.gpio.GpioController;
 
 /**
@@ -31,7 +32,16 @@ import com.pi4j.io.gpio.GpioController;
  */
 public class VerkundenbotDevice extends AWSIotDevice {
 
-    private GpioController gpioController;
+    private DeviceGpioController gpioController;
+
+    @AWSIotDeviceProperty
+    private boolean successState;
+
+    @AWSIotDeviceProperty
+    private boolean inProgressState;
+
+    @AWSIotDeviceProperty
+    private boolean inAlarmState;
 
     @AWSIotDeviceProperty
     private boolean plugAOn;
@@ -42,8 +52,7 @@ public class VerkundenbotDevice extends AWSIotDevice {
     @AWSIotDeviceProperty
     private boolean plugCOn;
 
-    @AWSIotDeviceProperty
-    private boolean plugDOn;
+    private boolean
 
 //    @AWSIotDeviceProperty
 //    private boolean ledGreenOn;
@@ -56,12 +65,12 @@ public class VerkundenbotDevice extends AWSIotDevice {
     }
 
     /**
-     * Provide a constructor where we can inject the GpioConontroller
+     * Provide a constructor where we can inject the DeviceGpioController
      *
      * @param thingName
      * @param gpioController
      */
-    public VerkundenbotDevice(String thingName, GpioController gpioController) {
+    public VerkundenbotDevice(String thingName, DeviceGpioController gpioController) {
         this(thingName);
         this.gpioController = gpioController;
 
@@ -79,15 +88,13 @@ public class VerkundenbotDevice extends AWSIotDevice {
     }
 
     public void setPlugAOn(boolean desiredState) {
-        // 1. update the window actuator with the desired state
-        this.plugAOn = desiredState;
 
         if (this.plugAOn) {
-            gpioController.turnOn();
+            gpioController.turnPlugAOn();
         } else {
-            gpioController.turnOff();
+            gpioController.turnPlugAOff();
         }
-
+        this.plugAOn = desiredState;
         System.out.println(
                 System.currentTimeMillis() + " <<< desired window state to " + (desiredState ? "open" : "closed"));
     }
@@ -132,15 +139,4 @@ public class VerkundenbotDevice extends AWSIotDevice {
 //        this.ledRgbColor = ledRgbColor;
 //    }
 
-//    @Override
-//    public void onShadowUpdate(String jsonState) {
-//        // synchronized block to serialize device accesses
-//        synchronized (this) {
-//            try {
-//                AwsIotJsonDeserializer.deserialize(this, jsonState);
-//            } catch (IOException e) {
-//                System.out.println("Failed to update device");
-//            }
-//        }
-//    }
 }

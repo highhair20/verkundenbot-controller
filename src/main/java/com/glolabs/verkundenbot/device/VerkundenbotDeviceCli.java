@@ -25,12 +25,20 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.pi4j.io.gpio.GpioController;
+
+
 /**
  * 1. Act as main class for spring boot application
  * 2. Also implements CommandLineRunner, so that code within run method
  * is executed before application startup but after all beans are effectively created
  * @author Jason Kelly
  *
+ * @todo add license to all classes
+ * @todo add logging to all classes
+ * @todo determine where to subscribe to all topics
+ * @todo publish to topics upon a failure to update the device
+ * @todo subscribe to all topics
+ * @todo write test cases using moquito (ref: https://github.com/Pi4J/pi4j/blob/master/pi4j-core/src/test/java/com/pi4j/io/gpio/impl/GpioControllerImplTest.java)
  */
 @SpringBootApplication
 public class VerkundenbotDeviceCli implements CommandLineRunner {
@@ -39,7 +47,7 @@ public class VerkundenbotDeviceCli implements CommandLineRunner {
 
     private static final String UpdateAcceptedTopic = "$aws/things/verkundenbot/shadow/update/accepted";
     private static final String UpdateRejectedTopic = "$aws/things/verkundenbot/shadow/update/rejected";
-    private static final String TestTopic = "$aws/things/verkundenbot/shadow/get";
+    private static final String GetTopic = "$aws/things/verkundenbot/shadow/get";
     private static final AWSIotQos TestTopicQos = AWSIotQos.QOS0;
 
     @Autowired
@@ -62,16 +70,18 @@ public class VerkundenbotDeviceCli implements CommandLineRunner {
             LOG.info("args[{}]: {}", i, args[i]);
         }
 
-        MqttClient awsIotClient = MqttClient.getInstance(properties);
-        AWSIotMqttClient client = awsIotClient.connect();
-
-        client.setWillMessage(new AWSIotMessage("client/disconnect", AWSIotQos.QOS0, client.getClientId()));
-
+        //
+        // create the object that replresent the device
         String thingName = "verkundenbot";
         GpioController gpioController = new DeviceGpioController();
         VerkundenbotDevice verkundenbotDevice = new VerkundenbotDevice(thingName, gpioController);
 
-
+        //
+        // create the mqtt client so that our device object can
+        // communicate with the device shadow in AWS
+        MqttClient awsIotClient = MqttClient.getInstance(properties);
+        AWSIotMqttClient client = awsIotClient.connect();
+        client.setWillMessage(new AWSIotMessage("client/disconnect", AWSIotQos.QOS0, client.getClientId()));
         client.attach(verkundenbotDevice);
         client.connect();
 
@@ -101,65 +111,65 @@ public class VerkundenbotDeviceCli implements CommandLineRunner {
         }
     }
 
-    public static class BlockingPublisher implements Runnable {
-        private final AWSIotMqttClient awsIotClient;
+//    public static class BlockingPublisher implements Runnable {
+//        private final AWSIotMqttClient awsIotClient;
+//
+//        public BlockingPublisher(AWSIotMqttClient awsIotClient) {
+//            this.awsIotClient = awsIotClient;
+//        }
+//
+//        @Override
+//        public void run() {
+//            long counter = 1;
+//
+//            while (true) {
+//                String payload = "hello from blocking publisher - " + (counter++);
+//                try {
+//                    awsIotClient.publish(TestTopic, payload);
+//                } catch (AWSIotException e) {
+//                    System.out.println(System.currentTimeMillis() + ": publish failed for " + payload);
+//                }
+//                System.out.println(System.currentTimeMillis() + ": >>> " + payload);
+//
+//                try {
+//                    Thread.sleep(1000);
+//                } catch (InterruptedException e) {
+//                    System.out.println(System.currentTimeMillis() + ": BlockingPublisher was interrupted");
+//                    return;
+//                }
+//            }
+//        }
+//    }
 
-        public BlockingPublisher(AWSIotMqttClient awsIotClient) {
-            this.awsIotClient = awsIotClient;
-        }
 
-        @Override
-        public void run() {
-            long counter = 1;
-
-            while (true) {
-                String payload = "hello from blocking publisher - " + (counter++);
-                try {
-                    awsIotClient.publish(TestTopic, payload);
-                } catch (AWSIotException e) {
-                    System.out.println(System.currentTimeMillis() + ": publish failed for " + payload);
-                }
-                System.out.println(System.currentTimeMillis() + ": >>> " + payload);
-
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    System.out.println(System.currentTimeMillis() + ": BlockingPublisher was interrupted");
-                    return;
-                }
-            }
-        }
-    }
-
-
-    public static class NonBlockingPublisher implements Runnable {
-        private final AWSIotMqttClient awsIotClient;
-
-        public NonBlockingPublisher(AWSIotMqttClient awsIotClient) {
-            this.awsIotClient = awsIotClient;
-        }
-
-        @Override
-        public void run() {
-            long counter = 1;
-
-            while (true) {
-                String payload = "hello from non-blocking publisher - " + (counter++);
-                AWSIotMessage message = new NonBlockingPublishListener(UpdateRejectedTopic, TestTopicQos, payload);
-                try {
-                    awsIotClient.publish(message);
-                } catch (AWSIotException e) {
-                    System.out.println(System.currentTimeMillis() + ": publish failed for " + payload);
-                }
-
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    System.out.println(System.currentTimeMillis() + ": NonBlockingPublisher was interrupted");
-                    return;
-                }
-            }
-        }
-    }
+//    public static class NonBlockingPublisher implements Runnable {
+//        private final AWSIotMqttClient awsIotClient;
+//
+//        public NonBlockingPublisher(AWSIotMqttClient awsIotClient) {
+//            this.awsIotClient = awsIotClient;
+//        }
+//
+//        @Override
+//        public void run() {
+//            long counter = 1;
+//
+//            while (true) {
+//                String payload = "hello from non-blocking publisher - " + (counter++);
+//                AWSIotMessage message = new NonBlockingPublishListener(UpdateRejectedTopic, TestTopicQos, payload);
+//                try {
+//                    awsIotClient.publish(message);
+//                } catch (AWSIotException e) {
+//                    System.out.println(System.currentTimeMillis() + ": publish failed for " + payload);
+//                }
+//
+//                try {
+//                    Thread.sleep(1000);
+//                } catch (InterruptedException e) {
+//                    System.out.println(System.currentTimeMillis() + ": NonBlockingPublisher was interrupted");
+//                    return;
+//                }
+//            }
+//        }
+//    }
 }
 

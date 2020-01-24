@@ -3,148 +3,170 @@ package com.glolabs.verkundenbot.device.gpio;
 
 import com.nahuellofeudo.piplates.InvalidAddressException;
 import com.nahuellofeudo.piplates.InvalidParameterException;
-import com.pi4j.io.gpio.*;
-import java.util.ArrayList;
 import com.nahuellofeudo.piplates.relayplate.RELAYPlate;
 
-public class DeviceGpioController {
+import com.pi4j.io.gpio.*;
+import com.pi4j.io.gpio.impl.GpioControllerImpl;
 
-    private GpioController gpio;
-    private GpioPinDigitalOutput pinRed;
-    private GpioPinDigitalOutput pinGreen;
-    private GpioPinDigitalOutput pinBlue;
+import java.util.Map;
+import java.util.HashMap;
+
+
+public class DeviceGpioController extends GpioControllerImpl {
+
+    private static final String RED = "r";
+    private static final String GREEN = "g";
+    private static final String BLUE = "b";
+    private Map<String, GpioPinDigitalOutput> rgbLedPins = new HashMap<>();
+
     private RELAYPlate relayPlate;
+    private Map<String, Integer> plugMap = new HashMap<>();
+    private static final String PLUG_A = "A";
+    private static final String PLUG_B = "B";
+    private static final String PLUG_C = "C";
+    private static final String PLUG_D = "D";
 
 
     public DeviceGpioController() {
-        gpio        = GpioFactory.getInstance();
-        pinRed      = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_23, "PinRed", PinState.HIGH);
-        pinGreen    = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_24, "pinGreen", PinState.HIGH);
-        pinBlue     = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_25, "pinBlue", PinState.HIGH);
-        try {
-            relayPlate  = new RELAYPlate(2);
-        } catch (InvalidAddressException e) {
+        // provision gpio pins for the RGB LED as output pins and turn them off
+        rgbLedPins.put(RED, provisionDigitalOutputPin(RaspiPin.GPIO_23, RED, PinState.HIGH));
+        rgbLedPins.put(GREEN, provisionDigitalOutputPin(RaspiPin.GPIO_24, GREEN, PinState.HIGH));
+        rgbLedPins.put(BLUE, provisionDigitalOutputPin(RaspiPin.GPIO_25, BLUE, PinState.HIGH));
 
+        try {
+            // initialize the relay plate and define which plug maps to which relay
+            relayPlate  = new RELAYPlate(2);
+            plugMap.put("A", 1);
+            plugMap.put("B", 3);
+            plugMap.put("C", 5);
+            plugMap.put("D", 7);
+        } catch (InvalidAddressException e) {
+            System.out.println("InvalidAddressException: " + e.getMessage());
         }
 
     }
 
-    public void setStatusLedBlue() {
-        ArrayList<Boolean> colors = new ArrayList<Boolean>();
-        colors.add(false);
-        colors.add(false);
-        colors.add(true);
+    /**
+     * setSuccessState
+     *
+     * Set LED color to success (which is blue).
+     * Turn the green board LED to solid on.
+     */
+    public void setSuccessState() {
+        Map<String, PinState> colors = new HashMap<>();
+        colors.put(RED, PinState.HIGH);
+        colors.put(GREEN, PinState.HIGH);
+        colors.put(BLUE, PinState.LOW);
         setRgbLed(colors);
+        turnGreenLedOn();
     }
 
-    public void setStatusLedGreen() {
-        ArrayList<Boolean> colors = new ArrayList<Boolean>();
-        colors.add(false);
-        colors.add(true);
-        colors.add(false);
-        setRgbLed(colors);
+    /**
+     * setInProgressState
+     *
+     * Set LED color to success (which is green).
+     * Flash the green board LED.
+     */
+    public void setInProgressState() {
+        //
+        Map<String, PinState> colors = new HashMap<>();
+        colors.put(RED, PinState.HIGH);
+        colors.put(GREEN, PinState.LOW);
+        colors.put(BLUE, PinState.HIGH);
+        //
+        flashGreenLed();
     }
 
-    public void setStatusLedRed() {
-        ArrayList<Boolean> colors = new ArrayList<Boolean>();
-        colors.add(true);
-        colors.add(false);
-        colors.add(false);
+    public void setInAlarmState() {
+        // turn led red
+        Map<String, PinState> colors = new HashMap<>();
+        colors.put(RED, PinState.LOW);
+        colors.put(GREEN, PinState.HIGH);
+        colors.put(BLUE, PinState.HIGH);
         setRgbLed(colors);
+        //
+        turnGreenLedOff();
+        // turn on the strobe
+        turnPlugDOn();
     }
 
-    public void setStatusLedWhite() {
-        ArrayList<Boolean> colors = new ArrayList<Boolean>();
-        colors.add(true);
-        colors.add(true);
-        colors.add(true);
-        setRgbLed(colors);
+    private void setRgbLed(Map<String, PinState> desiredColors) {
+        for (Map.Entry<String, PinState> entry : desiredColors.entrySet()) {
+            // get pin by name and set state
+            rgbLedPins.get(entry.getKey()).setState(entry.getValue());
+            System.out.println("Set RGB LED Pin '" + entry.getKey() +
+                    "' to value = " + entry.getValue());
+        }
     }
 
-    public void setStatusLedOff() {
-        ArrayList<Boolean> colors = new ArrayList<Boolean>();
-        colors.add(false);
-        colors.add(false);
-        colors.add(false);
-        setRgbLed(colors);
-    }
+    public void turnPlugAOn() { plugOn(PLUG_A); }
 
+    public void turnPlugAOff() { plugOff(PLUG_A); }
 
-    public void turnGreenLedOn() {
+    public void turnPlugBOn() { plugOn(PLUG_B); }
+
+    public void turnPlugBOff() { plugOff(PLUG_B); }
+
+    public void turnPlugCOn() { plugOn(PLUG_C); }
+
+    public void turnPlugCOff() { plugOff(PLUG_C); }
+
+    /**
+     * turnPlugDOn
+     *
+     * Plug D is reserved for the strobe so we will not expose this publicly.
+     * Turn it on for 1 second.
+     */
+    private void turnPlugDOn() { plugOn(PLUG_D, 1000); }
+
+    /**
+     * turnPlugDOff
+     *
+     * Plug D is reserved for the strobe so we will not expose this publicly
+     */
+    private void turnPlugDOff() { plugOff(PLUG_D); }
+
+    private void turnGreenLedOn() {
         relayPlate.setLED();
     }
 
-    public void turnGreenLedOff() {
+    private void turnGreenLedOff() {
         relayPlate.clearLED();
     }
 
-    public void plugAOn() {
-        try {
-            relayPlate.relayOn(1);
-        } catch (InvalidParameterException e) {
+    private void flashGreenLed() { relayPlate.toggleLED(); }
 
+
+    private void plugOn(String plugPosition) {
+        try {
+            relayPlate.relayOn(plugMap.get(plugPosition));
+        } catch (InvalidParameterException e) {
+            System.out.println("InvalidParameterException: " + e.getMessage());
         }
     }
 
-    public void plugAOff() {
+    /**
+     * plugOn
+     *
+     * Turn a plug on for x number of milliseconds
+     *
+     * @param plugPosition
+     * @param interval
+     */
+    private synchronized void plugOn(String plugPosition, Integer interval) {
+        plugOn(plugPosition);
         try {
-            relayPlate.relayOff(1);
-        } catch (InvalidParameterException e) {
-
-        }
+            wait(interval);
+        } catch (Exception e) {}
+        plugOff(plugPosition);
     }
 
-    public void plugBOn() {
+    private void plugOff(String plugPosition) {
         try {
-            relayPlate.relayOn(3);
+            relayPlate.relayOff(plugMap.get(plugPosition));
         } catch (InvalidParameterException e) {
-
+            System.out.println("InvalidParameterException: " + e.getMessage());
         }
-    }
-
-    public void plugBOff() {
-        try {
-            relayPlate.relayOff(3);
-        } catch (InvalidParameterException e) {
-
-        }
-    }
-
-    public void plugCOn() {
-        try {
-            relayPlate.relayOn(5);
-        } catch (InvalidParameterException e) {
-
-        }
-    }
-
-    public void plugCOff() {
-        try {
-            relayPlate.relayOff(5);
-        } catch (InvalidParameterException e) {
-
-        }
-    }
-
-    public void plugDOn() {
-        try {
-            relayPlate.relayOn(7);
-        } catch (InvalidParameterException e) {
-
-        }
-    }
-
-    public void plugDOff() {
-        try {
-            relayPlate.relayOff(7);
-        } catch (InvalidParameterException e) {
-
-        }
-    }
-
-    private void setRgbLed(ArrayList<Boolean> colors) {
-        // TODO add pin up down commands here
-        return;
     }
 
 }
