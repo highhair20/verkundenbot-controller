@@ -54,10 +54,40 @@ to voice and send through the speakers.
 * __PagerDuty (future)__ - in the future we may move alerts from Datadog to PagerDuty. At which 
 point we will want to move the webhook from Datadog to PagerDuty as well.  
 
-#### How will the sources interect?
+#### How will the sources interact?
+How will each source interact with the API and what do the 
+requests look like?
 * __Datadog__ - 
+    * Sending alerts - /alarm
+        * trigger the strobe for a short time
+        * turn the status LED red
+        * trigger an audible message
+            * alarm sound once
+            * "In store pixels are unstable" 
+    * Re-Sending alerts - /alarm
+        * trigger the strobe for a short time
+        * turn the status LED red 
+    * Sending Recovery message - /alarm
+        * trigger the strobe for a short time
+        * trigger audible message
+            * play recover sound
+            * "In store pixels have recovered"
+        * turn the status LED blue
 * __Deployments__ -
-* __Verkundenbot Site__ -
+    * Doing a deployment - /deployment
+        * trigger the strobe for a short time
+        * "<first_name> <last_name> is deploying code to <service>"
+        * once deployment completes
+            * play mario bros sound
+* __Verkundenbot Web App__ - /plug/{id}/{desired-state}
+    * Trigger plug A from UI - /plug/a
+        * turn on plug A
+    * Trigger plug B from UI - /plug/b
+        * turn on plug B
+    * Trigger plug C from UI - /plug/c
+        * turn on plug C
+    * Message - /free-speach
+        * play whatever message that's submitted
 * __PagerDuty (future)__ - TDB
 
 ## IoT Device Software
