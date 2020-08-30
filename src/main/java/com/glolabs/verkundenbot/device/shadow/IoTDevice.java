@@ -15,24 +15,19 @@
 
 package com.glolabs.verkundenbot.device.shadow;
 
-import java.util.*;
-import java.io.IOException;
-
 import com.amazonaws.services.iot.client.AWSIotDevice;
 import com.amazonaws.services.iot.client.AWSIotDeviceProperty;
 
-import com.amazonaws.services.iot.client.shadow.AwsIotJsonDeserializer;
-
-import com.glolabs.verkundenbot.device.gpio.DeviceGpioController;
-import com.pi4j.io.gpio.GpioController;
+import com.glolabs.verkundenbot.device.controller.DeviceController;
+//import com.pi4j.io.gpio.GpioController;
 
 /**
  * This class encapsulates an actual device. It extends {@link AWSIotDevice} to
  * define properties that are to be kept in sync with the AWS IoT shadow.
  */
-public class VerkundenbotDevice extends AWSIotDevice {
+public class IoTDevice extends AWSIotDevice {
 
-    private DeviceGpioController gpioController;
+    private DeviceController deviceController;
 
     @AWSIotDeviceProperty
     private boolean successState;
@@ -44,15 +39,16 @@ public class VerkundenbotDevice extends AWSIotDevice {
     private boolean inAlarmState;
 
     @AWSIotDeviceProperty
-    private boolean plugAOn;
+    private boolean plugAState;
 
     @AWSIotDeviceProperty
-    private boolean plugBOn;
+    private boolean plugBState;
 
     @AWSIotDeviceProperty
-    private boolean plugCOn;
+    private boolean plugCState;
 
-    private boolean
+    @AWSIotDeviceProperty
+    private boolean plugDState;
 
 //    @AWSIotDeviceProperty
 //    private boolean ledGreenOn;
@@ -60,26 +56,26 @@ public class VerkundenbotDevice extends AWSIotDevice {
 //    @AWSIotDeviceProperty
 //    private List<Integer> ledRgbColor;
 
-    private VerkundenbotDevice(String thingName) {
+    private IoTDevice(String thingName) {
         super(thingName);
     }
 
     /**
-     * Provide a constructor where we can inject the DeviceGpioController
+     * Provide a constructor where we can inject the DeviceController
      *
      * @param thingName
-     * @param gpioController
+     * @param deviceController
      */
-    public VerkundenbotDevice(String thingName, DeviceGpioController gpioController) {
+    public IoTDevice(String thingName, DeviceController deviceController) {
         this(thingName);
-        this.gpioController = gpioController;
+        this.deviceController = deviceController;
 
     }
 
 
-    public boolean isPlugAOn() {
+    public boolean getPlugAState() {
         // read the state from the relay
-        boolean reportedState = this.plugAOn;
+        boolean reportedState = this.plugAState;
         System.out.println(
                 System.currentTimeMillis() + " >>> reported plug A state: " + (reportedState ? "on" : "off"));
 
@@ -87,40 +83,39 @@ public class VerkundenbotDevice extends AWSIotDevice {
         return reportedState;
     }
 
-    public void setPlugAOn(boolean desiredState) {
-
-        if (this.plugAOn) {
-            gpioController.turnPlugAOn();
+    public void setPlugAState(boolean desiredState) {
+        this.plugAState = desiredState;
+        if (this.plugAState) {
+            deviceController.turnPlugAOn();
         } else {
-            gpioController.turnPlugAOff();
+            deviceController.turnPlugAOff();
         }
-        this.plugAOn = desiredState;
         System.out.println(
                 System.currentTimeMillis() + " <<< desired window state to " + (desiredState ? "open" : "closed"));
     }
 
-    public boolean isPlugBOn() {
-        return plugBOn;
+    public boolean getPlugBState() {
+        return plugBState;
     }
 
-    public void setPlugBOn(boolean plugBOn) {
-        this.plugBOn = plugBOn;
+    public void setPlugBState(boolean plugBState) {
+        this.plugBState = plugBState;
     }
 
-    public boolean isPlugCOn() {
-        return plugCOn;
+    public boolean getPlugCState() {
+        return plugCState;
     }
 
-    public void setPlugCOn(boolean plugCOn) {
-        this.plugCOn = plugCOn;
+    public void setPlugCState(boolean plugCState) {
+        this.plugCState = plugCState;
     }
 
-    public boolean isPlugDOn() {
-        return plugDOn;
+    public boolean getPlugDState() {
+        return plugDState;
     }
 
-    public void setPlugDOn(boolean plugDOn) {
-        this.plugDOn = plugDOn;
+    public void setPlugDState(boolean plugDState) {
+        this.plugDState = plugDState;
     }
 
 //    public boolean isLedGreenOn() {

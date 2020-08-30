@@ -1,18 +1,17 @@
-package com.glolabs.verkundenbot.device.gpio;
-
+package com.glolabs.verkundenbot.device.controller;
 
 import com.nahuellofeudo.piplates.InvalidAddressException;
 import com.nahuellofeudo.piplates.InvalidParameterException;
 import com.nahuellofeudo.piplates.relayplate.RELAYPlate;
 
 import com.pi4j.io.gpio.*;
-import com.pi4j.io.gpio.impl.GpioControllerImpl;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Map;
 import java.util.HashMap;
 
 
-public class DeviceGpioController extends GpioControllerImpl {
+public class DeviceController {
 
     private static final String RED = "r";
     private static final String GREEN = "g";
@@ -26,16 +25,21 @@ public class DeviceGpioController extends GpioControllerImpl {
     private static final String PLUG_C = "C";
     private static final String PLUG_D = "D";
 
+    private final GpioController gpio;
 
-    public DeviceGpioController() {
+
+    public DeviceController() {
+
+        this.gpio = GpioFactory.getInstance();
+
         // provision gpio pins for the RGB LED as output pins and turn them off
-        rgbLedPins.put(RED, provisionDigitalOutputPin(RaspiPin.GPIO_23, RED, PinState.HIGH));
-        rgbLedPins.put(GREEN, provisionDigitalOutputPin(RaspiPin.GPIO_24, GREEN, PinState.HIGH));
-        rgbLedPins.put(BLUE, provisionDigitalOutputPin(RaspiPin.GPIO_25, BLUE, PinState.HIGH));
+        rgbLedPins.put(RED, this.gpio.provisionDigitalOutputPin(RaspiPin.GPIO_23, RED, PinState.HIGH));
+        rgbLedPins.put(GREEN, this.gpio.provisionDigitalOutputPin(RaspiPin.GPIO_24, GREEN, PinState.HIGH));
+        rgbLedPins.put(BLUE, this.gpio.provisionDigitalOutputPin(RaspiPin.GPIO_25, BLUE, PinState.HIGH));
 
         try {
             // initialize the relay plate and define which plug maps to which relay
-            relayPlate  = new RELAYPlate(2);
+            relayPlate = new RELAYPlate(2);
             plugMap.put("A", 1);
             plugMap.put("B", 3);
             plugMap.put("C", 5);

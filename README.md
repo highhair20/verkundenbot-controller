@@ -1,6 +1,6 @@
 Reference:
 * https://www.baeldung.com/spring-boot-console-app
-
+* https://www.programcreek.com/java-api-examples/?code=aws%2Faws-iot-device-sdk-java%2Faws-iot-device-sdk-java-master%2Faws-iot-device-sdk-java-samples%2Fsrc%2Fmain%2Fjava%2Fcom%2Famazonaws%2Fservices%2Fiot%2Fclient%2Fsample%2FpubSub%2FPublishSubscribeSample.java
 
 
 
@@ -89,6 +89,10 @@ requests look like?
     * Message - /free-speach
         * play whatever message that's submitted
 * __PagerDuty (future)__ - TDB
+
+#### What does the swagger doc look like?
+
+
 
 ## IoT Device Software
 

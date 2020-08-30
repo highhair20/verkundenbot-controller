@@ -25,9 +25,9 @@ import com.amazonaws.services.iot.client.AWSIotTopic;
  * This class extends {@link AWSIotTopic} to receive messages from a subscribed
  * topic.
  */
-public class TestTopicListener extends AWSIotTopic {
+public class TopicListener extends AWSIotTopic {
 
-    public TestTopicListener(String topic, AWSIotQos qos) {
+    public TopicListener(String topic, AWSIotQos qos) {
         super(topic, qos);
     }
 
